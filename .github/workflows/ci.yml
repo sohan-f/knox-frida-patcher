@@ -67,16 +67,25 @@ jobs:
 
       - name: Write gadget metadata
         run: |
+          set -euo pipefail
+          ARM_SHA=$(sha256sum "out_dir/frida-gadget-${FRIDA_VERSION}-android-arm.so.xz" | cut -d' ' -f1)
+          ARM64_SHA=$(sha256sum "out_dir/frida-gadget-${FRIDA_VERSION}-android-arm64.so.xz" | cut -d' ' -f1)
           cat > out_dir/gadget.json <<EOF
           {
             "version": "${FRIDA_VERSION}",
             "assets": {
               "arm": "https://github.com/${{ github.repository }}/releases/download/${FRIDA_VERSION}/frida-gadget-${FRIDA_VERSION}-android-arm.so.xz",
               "arm64": "https://github.com/${{ github.repository }}/releases/download/${FRIDA_VERSION}/frida-gadget-${FRIDA_VERSION}-android-arm64.so.xz"
+            },
+            "sha256": {
+              "arm": "${ARM_SHA}",
+              "arm64": "${ARM64_SHA}"
             }
           }
           EOF
           cat out_dir/gadget.json
+          (cd out_dir && sha256sum "frida-gadget-${FRIDA_VERSION}-android-arm.so.xz" "frida-gadget-${FRIDA_VERSION}-android-arm64.so.xz" gadget.json > SHA256SUMS)
+          cat out_dir/SHA256SUMS
 
       - name: Upload artifact
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -93,3 +102,4 @@ jobs:
           files: |
             out_dir/*.xz
             out_dir/gadget.json
+            out_dir/SHA256SUMS
